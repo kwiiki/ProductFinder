@@ -10,9 +10,11 @@ import androidx.lifecycle.viewModelScope
 import com.example.productfinder.core.network.ApiService
 import com.example.productfinder.data.Filters
 import com.example.productfinder.data.Product
+import com.example.productfinder.data.SearchByTextRequest
 import com.example.productfinder.data.db.dao.ProductDao
 import com.example.productfinder.data.db.entity.ProductEntity
 import com.example.productfinder.presentation.itemfoundscreen.ProductsUiState
+import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +24,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.io.FileOutputStream
 import java.net.SocketTimeoutException
@@ -41,11 +44,6 @@ class HomeScreenViewModel @Inject constructor(
     val recentProducts = _recentProducts
 
     val filters = MutableStateFlow<Filters>(Filters(emptyList()))
-
-    init {
-        getRecentProducts()
-    }
-
 
     fun getRecentProducts(){
         viewModelScope.launch {
@@ -87,7 +85,8 @@ class HomeScreenViewModel @Inject constructor(
         viewModelScope.launch {
             _productsState.value = ProductsUiState.Loading
             try {
-                val products = apiService.searchByText(text, filters.value)
+                Log.d("searchByText", "searchByText: $text, ${filters.value.toString()}")
+                val products = apiService.searchByText(SearchByTextRequest(text = text, filters = filters.value))
                 _productsState.value = ProductsUiState.Success(products)
             } catch (e: SocketTimeoutException) {
                 _productsState.value =
@@ -104,15 +103,27 @@ class HomeScreenViewModel @Inject constructor(
         viewModelScope.launch {
             _productsState.value = ProductsUiState.Loading
             try {
+                // 1. Получаем сжатый файл из Uri
                 val file = uriToFile(uri, context)
                 val compressedFile = compressFile(file, context)
 
+                // 2. Создаём Part для изображения
                 val requestFile = compressedFile
                     .asRequestBody("image/*".toMediaTypeOrNull())
-                val body = MultipartBody.Part
+                val imagePart = MultipartBody.Part
                     .createFormData("image", compressedFile.name, requestFile)
 
-                val products = apiService.upload(body)
+                // 3. Формируем JSON из текущих фильтров
+                //    Например, если filters.value = Filters(["kaspi","ozon"]),
+                //    то нам нужно сделать {"filters": {"marketplaces": ["kaspi","ozon"]}}
+                val filterJson = Gson().toJson(mapOf("filters" to mapOf("marketplaces" to filters.value.marketplaces)))
+                val filterRequestBody = filterJson
+                    .toRequestBody("application/json".toMediaTypeOrNull())
+                val dataPart = MultipartBody.Part
+                    .createFormData("data", null, filterRequestBody)
+
+                // 4. Отправляем на сервер и обрабатываем результат
+                val products = apiService.upload(imagePart, dataPart)
                 _productsState.value = ProductsUiState.Success(products)
 
             } catch (e: SocketTimeoutException) {
@@ -123,6 +134,7 @@ class HomeScreenViewModel @Inject constructor(
             }
         }
     }
+
 
     fun clearError() {
         _productsState.value = ProductsUiState.Error(message = "")

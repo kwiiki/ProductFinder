@@ -59,6 +59,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -131,7 +132,7 @@ fun HomeScreen(navController: NavHostController, homeScreenViewModel: HomeScreen
 
 
     LaunchedEffect(recentProducts) {
-        Log.d("recentProducts", "HomeScreen: $recentProducts")
+        homeScreenViewModel.getRecentProducts()
     }
 
     val imageCropLauncher =
@@ -262,7 +263,7 @@ fun HomeScreen(navController: NavHostController, homeScreenViewModel: HomeScreen
             color = Color.White,
             fontWeight = FontWeight.W500
         )
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), reverseLayout = true) {
             items(recentProducts) { item ->
                 ProductItem(item)
             }
@@ -369,8 +370,8 @@ fun ProductItem(item: ProductEntity) {
             modifier = Modifier
                 .background(color = MaterialTheme.colorScheme.background),
         ) {
-            Image(
-                painter = painterResource(R.drawable.mock_phone),
+            AsyncImage(
+                model = item.imageLink,
                 contentDescription = "phone"
             )
             Column(
@@ -383,7 +384,8 @@ fun ProductItem(item: ProductEntity) {
                     color = Color.White,
                     fontSize = 14.sp,
                     minLines = 1,
-                    maxLines = 3,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     fontWeight = FontWeight.W400
                 )
                 Text(
