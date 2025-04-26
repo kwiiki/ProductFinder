@@ -97,8 +97,8 @@ val listOfMarketPlaces =
             linkForMarkerPlace = "https://www.flip.kz/"
         ),
         MarketPlaces(
-            linkForLogoMarkerPlace = "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://forte.kz&size=256",
-            linkForMarkerPlace = "https://market.forte.kz/"
+            linkForLogoMarkerPlace = "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://sulpak.kz&size=256",
+            linkForMarkerPlace = "https://www.sulpak.kz/"
         ),
         MarketPlaces(
             linkForLogoMarkerPlace = "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://ozon.kz&size=256",
@@ -111,6 +111,9 @@ val listOfMarketPlaces =
         MarketPlaces(
             linkForLogoMarkerPlace = "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://lamoda.kz&size=256",
             linkForMarkerPlace = "https://www.lamoda.kz/"
+        ), MarketPlaces(
+            linkForLogoMarkerPlace = "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://adidas.kz&size=256",
+            linkForMarkerPlace = "https://www.adidas.kz/"
         )
     )
 
@@ -127,6 +130,7 @@ fun HomeScreen(navController: NavHostController, homeScreenViewModel: HomeScreen
     )
 
     val recentProducts by homeScreenViewModel.recentProducts.collectAsState()
+    var textForSearch by remember { mutableStateOf("Поиск") }
 
     val context = LocalContext.current
 
@@ -150,6 +154,7 @@ fun HomeScreen(navController: NavHostController, homeScreenViewModel: HomeScreen
     val speechLauncher =
         rememberLauncherForActivityResult(contract = SpeechRecognitionContract()) { recognizedText ->
             recognizedText?.let {
+                textForSearch = it
                 Log.d("textTest", "HomeScreen: $it")
                 homeScreenViewModel.searchByText(it)
                 navController.navigate(NavPath.ItemFoundScreen.name)
@@ -180,7 +185,7 @@ fun HomeScreen(navController: NavHostController, homeScreenViewModel: HomeScreen
             ) {
                 Icon(Icons.Default.Search, contentDescription = "", tint = Color.White)
                 Text(
-                    text = "Поиск",
+                    text = textForSearch,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.W400,
                     color = Color.White
@@ -253,19 +258,27 @@ fun HomeScreen(navController: NavHostController, homeScreenViewModel: HomeScreen
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            products.forEach { product ->
-                FilterButton(text = product)
+            products.forEach { text ->
+                FilterButton(
+                    text = text,
+                    homeScreenViewModel,
+                    navController,
+                    onClick = {
+                        textForSearch = text
+                    })
             }
         }
-        Text(
-            text = "Вы недавно смотрели:",
-            fontSize = 16.sp,
-            color = Color.White,
-            fontWeight = FontWeight.W500
-        )
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), reverseLayout = true) {
-            items(recentProducts) { item ->
-                ProductItem(item)
+        if (recentProducts.isNotEmpty()) {
+            Text(
+                text = "Вы недавно смотрели:",
+                fontSize = 16.sp,
+                color = Color.White,
+                fontWeight = FontWeight.W500
+            )
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), reverseLayout = true) {
+                items(recentProducts) { item ->
+                    ProductItem(item)
+                }
             }
         }
         Text(
@@ -372,7 +385,8 @@ fun ProductItem(item: ProductEntity) {
         ) {
             AsyncImage(
                 model = item.imageLink,
-                contentDescription = "phone"
+                contentDescription = "phone",
+                modifier = Modifier.width(100.dp)
             )
             Column(
                 modifier = Modifier
@@ -403,6 +417,9 @@ fun ProductItem(item: ProductEntity) {
 @Composable
 fun FilterButton(
     text: String,
+    homeScreenViewModel: HomeScreenViewModel,
+    navController: NavHostController,
+    onClick: () -> Unit,
 ) {
     Box(
         modifier = Modifier
@@ -416,7 +433,12 @@ fun FilterButton(
                 color = MaterialTheme.colorScheme.secondary,
                 shape = RoundedCornerShape(16.dp)
             )
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable {
+                onClick()
+                navController.navigate(NavPath.ItemFoundScreen.name)
+                homeScreenViewModel.searchByText(text)
+            },
         contentAlignment = Alignment.Center
     ) {
         Text(

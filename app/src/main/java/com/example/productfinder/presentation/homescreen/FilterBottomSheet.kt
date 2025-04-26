@@ -109,7 +109,7 @@ fun FilterBottomSheet(
                 fontWeight = FontWeight.W700
             )
             Switch(
-                checked = isMarketplaceChecked("Satu.kz"),
+                checked = isMarketplaceChecked("Satu"),
                 onCheckedChange = { isChecked ->
                     homeScreenViewModel.toggleMarketplace("Satu", isChecked)
                 },

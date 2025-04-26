@@ -2,6 +2,7 @@ package com.example.productfinder.presentation.itemfoundscreen
 
 import android.annotation.SuppressLint
 import android.net.Uri
+import androidx.compose.animation.core.EaseInOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -23,10 +25,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +51,11 @@ import com.example.itemfinder.core.navigation.NavPath
 import com.example.productfinder.presentation.homescreen.viewmodel.HomeScreenViewModel
 import com.example.productfinder.R
 import com.example.productfinder.data.Product
+import com.example.productfinder.movingletters.AnimatedTextState
+import com.example.productfinder.movingletters.FadeAnimatedText
+import com.example.productfinder.movingletters.rememberAnimatedTextState
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 
 @SuppressLint("CoroutineCreationDuringComposition")
@@ -66,10 +76,12 @@ fun ItemFoundScreen(
     ) {
         when (productsUiState) {
             is ProductsUiState.Loading -> {
-                CircularProgressIndicator(color = Color.Gray, strokeWidth = 2.dp)
-
+                LoadingAnimation(
+                    modifier = Modifier
+                        .fillMaxWidth()          // ширина
+                        .wrapContentHeight()     // высота по содержимому
+                )
             }
-
             is ProductsUiState.Empty -> {
             }
 
@@ -109,6 +121,46 @@ fun ItemFoundScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun LoadingAnimation(
+    modifier: Modifier = Modifier,
+    messages: List<String> = listOf(
+        "Ищем в Kaspi…",
+        "Ищем в Ozon…",
+        "Ищем в Wildberries…"
+    ),
+    cycleMillis: Long = 2_600L      // ≥ animationDuration
+) {
+    var index by remember { mutableStateOf(0) }
+    val message = messages[index]
+
+    // Переключаемся на следующую строку через заданный интервал
+    LaunchedEffect(message) {
+        delay(cycleMillis)
+        index = (index + 1) % messages.size
+    }
+
+    // Центрируем надпись по ширине
+    Box(
+        modifier = modifier.fillMaxWidth(),
+        contentAlignment = Alignment.Center
+    ) {
+        key(message) {
+            FadeAnimatedText(
+                text = message,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.SemiBold
+                ),
+                animationDuration = 2_000.milliseconds,
+                intermediateDuration = 90.milliseconds,
+                easing = EaseInOut,
+                animateOnMount = true    // анимация запускается сама
+            )
         }
     }
 }
