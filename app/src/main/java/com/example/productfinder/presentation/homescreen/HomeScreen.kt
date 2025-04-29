@@ -237,7 +237,8 @@ fun HomeScreen(navController: NavHostController, homeScreenViewModel: HomeScreen
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.clickable {
-                    openFilterBottomSheet = true
+                    navController.navigate(NavPath.FilterScreen.name)
+//                    openFilterBottomSheet = true
                 }) {
                 Text(
                     text = "Фильтры",

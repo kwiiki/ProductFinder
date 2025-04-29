@@ -13,12 +13,15 @@ import com.example.productfinder.data.Product
 import com.example.productfinder.data.SearchByTextRequest
 import com.example.productfinder.data.db.dao.ProductDao
 import com.example.productfinder.data.db.entity.ProductEntity
+import com.example.productfinder.presentation.filterscreen.FilterCategory
+import com.example.productfinder.presentation.filterscreen.FilterItem
 import com.example.productfinder.presentation.itemfoundscreen.ProductsUiState
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -43,6 +46,9 @@ class HomeScreenViewModel @Inject constructor(
     private val _recentProducts = MutableStateFlow<List<ProductEntity>>(emptyList())
     val recentProducts = _recentProducts
 
+    private val _categories = MutableStateFlow(sampleData())
+    val categories: StateFlow<List<FilterCategory>> = _categories
+
     val filters = MutableStateFlow<Filters>(Filters(emptyList()))
 
     fun getRecentProducts(){
@@ -51,22 +57,55 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
-    fun saveRecentProductInDB(product: Product){
-        viewModelScope.launch {
-            productDao.insert(
-                ProductEntity(
-                    title = product.title.toString(),
-                    source = product.source.toString(),
-                    price = product.price.toString(),
-                    imageLink = product.imageLink.toString(),
-                    rating = product.rating,
-                    linkForMarket = product.link.toString(),
-                    freeDelivery = product.freeDelivery,
-                    logoUrl = product.logoUrl.toString()
-                )
-            )
+    fun toggleCategory(catId: String, enabled: Boolean) {
+        _categories.update { list ->
+            list.map {
+                if (it.id == catId) {
+                    it.copy(
+                        enabled = enabled,
+                        items = it.items.map { item -> item.copy(enabled = enabled) }
+                    )
+                } else it
+            }
         }
     }
+
+    fun toggleItem(catId: String, itemId: String, enabled: Boolean) {
+        _categories.update { list ->
+            list.map { cat ->
+                if (cat.id == catId) {
+                    val newItems = cat.items.map { item ->
+                        if (item.id == itemId) item.copy(enabled = enabled) else item
+                    }
+                    // категория считается включённой, если включён хотя бы один дочерний
+                    cat.copy(
+                        enabled = newItems.all { it.enabled },
+                        items = newItems
+                    )
+                } else cat
+            }
+        }
+    }
+
+    private fun sampleData() = listOf(
+        FilterCategory(
+            id = "marketplaces",
+            title = "Маркетплейсы",
+            items = listOf(
+                FilterItem("kaspi", "Kaspi",  "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://kaspi.kz&size=256"),
+                FilterItem("wildberries", "Wildberries", "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://wildberries.kz&size=256"),
+                FilterItem("ozon", "Ozon", "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://ozon.kz&size=256"),
+                FilterItem("flip", "Flip", "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://flip.kz&size=256"),
+            )
+        ),
+        FilterCategory(
+            id = "shops",
+            title = "Магазины электроники",
+            items = listOf(
+                FilterItem("sulpak", "Sulpak", "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://sulpak.kz&size=256"),
+            )
+        )
+    )
 
     fun toggleMarketplace(marketplace: String, isChecked: Boolean) {
         val currentList = filters.value.marketplaces.toMutableList()
@@ -173,5 +212,22 @@ class HomeScreenViewModel @Inject constructor(
             }
         }
         return file
+    }
+
+    fun saveRecentProductInDB(product: Product){
+        viewModelScope.launch {
+            productDao.insert(
+                ProductEntity(
+                    title = product.title.toString(),
+                    source = product.source.toString(),
+                    price = product.price.toString(),
+                    imageLink = product.imageLink.toString(),
+                    rating = product.rating,
+                    linkForMarket = product.link.toString(),
+                    freeDelivery = product.freeDelivery,
+                    logoUrl = product.logoUrl.toString()
+                )
+            )
+        }
     }
 }

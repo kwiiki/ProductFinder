@@ -60,20 +60,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ProductFinderTheme {
-//                    AnimatedTextScreen(
-//                        content = { state, text ->
-//                            FadeAnimatedText(
-//                                state = state,
-//                                text = text,
-//                                style = MaterialTheme.typography.displayLarge.copy(fontSize = 24.sp, fontWeight = FontWeight.Black),
-//                                animateOnMount = false
-//                            )
-//                        },
-//                        contentColor = Color(0xFFFFFFFF),
-//                        containerColor = MaterialTheme.colorScheme.background
-//                    )
-
+            ProductFinderTheme(dynamicColor = false) {
                 ProductFinderApp()
             }
         }

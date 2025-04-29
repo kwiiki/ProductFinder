@@ -15,9 +15,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.itemfinder.core.navigation.NavPath
-import com.example.itemfinder.core.navigation.Screen
+import com.example.productfinder.core.navigation.Screen
 import com.example.productfinder.presentation.homescreen.HomeScreen
 import com.example.itemfinder.presentation.homescreen.OpenInWebViewScreen
+import com.example.productfinder.presentation.filterscreen.FilterScreen
 import com.example.productfinder.presentation.homescreen.viewmodel.HomeScreenViewModel
 import com.example.productfinder.presentation.itemfoundscreen.ItemFoundScreen
 
@@ -34,7 +35,7 @@ fun ProductFinderApp() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = NavPath.HomeScreen.name,
+            startDestination = NavPath.FilterScreen.name,
             modifier = Modifier.padding(innerPadding),
         ) {
             composable(Screen.HomeScreen.route) {
@@ -49,6 +50,9 @@ fun ProductFinderApp() {
             ) { backStackEntry ->
                 val url = backStackEntry.arguments?.getString("url")?.let { Uri.decode(it) }
                 OpenInWebViewScreen(url = url)
+            }
+            composable(Screen.FilterScreen.route) {
+                FilterScreen(navController)
             }
         }
     }
