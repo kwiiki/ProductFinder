@@ -3,6 +3,7 @@
 
 package com.example.productfinder.presentation.homescreen
 
+import android.annotation.SuppressLint
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -13,6 +14,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -22,6 +24,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -72,70 +75,30 @@ import com.example.productfinder.presentation.homescreen.viewmodel.HomeScreenVie
 import com.example.productfinder.R
 import com.example.productfinder.data.MarketPlaces
 import com.example.productfinder.data.db.entity.ProductEntity
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.layout.ContentScale
+import com.example.productfinder.presentation.listOfMarketPlaces
+import com.example.productfinder.presentation.products
+import java.text.DecimalFormat
+import java.text.DecimalFormatSymbols
+import java.util.Locale
 
-val products = listOf(
-    "iPhone 13",
-    "Samsung ",
-    "Google Pixel 6",
-    "OnePlus 9",
-    "Xiaomi Mi 11",
-    "Huawei P40",
-    "Sony Xperia 5"
-)
-val listOfMarketPlaces =
-    listOf(
-        MarketPlaces(
-            linkForLogoMarkerPlace = "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://olx.kz&size=256",
-            linkForMarkerPlace = "https://www.olx.kz/"
-        ),
-        MarketPlaces(
-            linkForLogoMarkerPlace = "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://kaspi.kz&size=256",
-            linkForMarkerPlace = "https://kaspi.kz/"
-        ),
-        MarketPlaces(
-            linkForLogoMarkerPlace = "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://flip.kz&size=256",
-            linkForMarkerPlace = "https://www.flip.kz/"
-        ),
-        MarketPlaces(
-            linkForLogoMarkerPlace = "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://sulpak.kz&size=256",
-            linkForMarkerPlace = "https://www.sulpak.kz/"
-        ),
-        MarketPlaces(
-            linkForLogoMarkerPlace = "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://ozon.kz&size=256",
-            linkForMarkerPlace = "https://ozon.kz/"
-        ),
-        MarketPlaces(
-            linkForLogoMarkerPlace = "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://satu.kz&size=256",
-            linkForMarkerPlace = "https://satu.kz/"
-        ),
-        MarketPlaces(
-            linkForLogoMarkerPlace = "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://lamoda.kz&size=256",
-            linkForMarkerPlace = "https://www.lamoda.kz/"
-        ), MarketPlaces(
-            linkForLogoMarkerPlace = "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://adidas.kz&size=256",
-            linkForMarkerPlace = "https://www.adidas.kz/"
-        )
-    )
-
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun HomeScreen(navController: NavHostController, homeScreenViewModel: HomeScreenViewModel) {
-
-    var openBottomSheet by remember { mutableStateOf(false) }
-    val bottomState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true
-    )
-    var openFilterBottomSheet by remember { mutableStateOf(false) }
-    val filterBottomState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true
-    )
+fun HomeScreen(
+    navController: NavHostController,
+    homeScreenViewModel: HomeScreenViewModel
+) {
+    var openCameraSheet by remember { mutableStateOf(false) }
+    val cameraSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val recentProducts by homeScreenViewModel.recentProducts.collectAsState()
     var textForSearch by remember { mutableStateOf("Поиск") }
-
     val context = LocalContext.current
 
-
-    LaunchedEffect(recentProducts) {
+    LaunchedEffect(Unit) {
         homeScreenViewModel.getRecentProducts()
     }
 
@@ -155,217 +118,325 @@ fun HomeScreen(navController: NavHostController, homeScreenViewModel: HomeScreen
         rememberLauncherForActivityResult(contract = SpeechRecognitionContract()) { recognizedText ->
             recognizedText?.let {
                 textForSearch = it
-                Log.d("textTest", "HomeScreen: $it")
                 homeScreenViewModel.searchByText(it)
                 navController.navigate(NavPath.ItemFoundScreen.name)
             }
         }
 
-    val scrollState = rememberScrollState()
-
-    Column(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.background)
-            .padding(horizontal = 16.dp, vertical = 24.dp)
-            .verticalScroll(scrollState),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+            .background(MaterialTheme.colorScheme.background)
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-                .border(width = 1.dp, color = Color.White, shape = RoundedCornerShape(8.dp))
-        ) {
-            Row(
-                modifier = Modifier
-                    .padding(start = 16.dp)
-                    .align(alignment = Alignment.CenterStart),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(Icons.Default.Search, contentDescription = "", tint = Color.White)
-                Text(
-                    text = textForSearch,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.W400,
-                    color = Color.White
-                )
-            }
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .padding(end = 16.dp)
-                    .align(alignment = Alignment.CenterEnd)
-            ) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(id = R.drawable.micro_icon),
-                    contentDescription = "",
-                    tint = Color(0xFFDA6600),
-                    modifier = Modifier.clickable {
-                        speechLauncher.launch(null)
-                    }
-                )
-                Spacer(
-                    modifier = Modifier
-                        .height(24.dp)
-                        .width(1.dp)
-                        .background(color = Color.White)
-                )
-                Icon(
-                    imageVector = ImageVector.vectorResource(id = R.drawable.camera_icon),
-                    contentDescription = "",
-                    tint = Color(0xFFDA6600),
-                    modifier = Modifier.clickable {
-                        openBottomSheet = true
-                    }
-                )
-            }
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "Популярные запросы:",
-                fontSize = 16.sp,
-                color = Color.White,
-                fontWeight = FontWeight.W500
-            )
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable {
-                    openFilterBottomSheet = true
-                }) {
-                Text(
-                    text = "Фильтры",
-                    color = Color.White,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.W400
-                )
-                Image(
-                    painter = painterResource(R.drawable.filter_icon),
-                    contentDescription = "",
-                    modifier = Modifier.size(18.dp)
-                )
+        val isWide = maxWidth > 600.dp
+        val scrollState = rememberScrollState()
 
+        if (isWide) {
+            Row(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(16.dp)
+                        .verticalScroll(scrollState),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 50.dp)
+                            .border(1.dp, Color.White, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 16.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = null,
+                                tint = Color.White
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(text = textForSearch, fontSize = 16.sp, color = Color.White)
+                        }
+                        Row(
+                            modifier = Modifier.align(Alignment.CenterEnd),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.micro_icon),
+                                contentDescription = null,
+                                tint = Color(0xFFDA6600),
+                                modifier = Modifier.clickable { speechLauncher.launch(null) }
+                            )
+                            Spacer(
+                                Modifier
+                                    .width(1.dp)
+                                    .height(24.dp)
+                                    .background(Color.White)
+                            )
+                            Icon(
+                                imageVector = ImageVector.vectorResource(id = R.drawable.camera_icon),
+                                contentDescription = null,
+                                tint = Color(0xFFDA6600),
+                                modifier = Modifier.clickable { openCameraSheet = true }
+                            )
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Популярные запросы:", fontSize = 16.sp, color = Color.White)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.clickable { navController.navigate(NavPath.FilterScreen.name) }
+                        ) {
+                            Text("Фильтры", fontSize = 14.sp, color = Color.White)
+                            Spacer(Modifier.width(4.dp))
+                            Icon(
+                                painter = painterResource(R.drawable.filter_icon),
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = Color.White
+                            )
+                        }
+                    }
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        products.forEach { query ->
+                            FilterButton(
+                                text = query,
+                                homeScreenViewModel = homeScreenViewModel,
+                                navController = navController
+                            ) { textForSearch = query }
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(16.dp)
+                        .verticalScroll(scrollState),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    if (recentProducts.isNotEmpty()) {
+                        Text("Вы недавно смотрели:", fontSize = 16.sp, color = Color.White)
+                        BoxWithConstraints(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                        ) {
+                            val columns = 3                       // сколько карточек хотим в ряду
+                            val spacing = 12.dp                    // Arrangement.spacedBy(...)
+
+                            val baseWidth =
+                                (maxWidth - spacing * (columns - 1)) / columns  // columns = 3
+                            val itemWidth = baseWidth * 1.15f
+                            LazyRow(
+                                horizontalArrangement = Arrangement.spacedBy(spacing),
+                            ) {
+                                items(recentProducts.reversed()) { product ->
+                                    ProductItem(
+                                        item = product,
+                                        modifier = Modifier.width(itemWidth),
+                                        navController
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Text("Где мы ищем:", fontSize = 16.sp, color = Color.White)
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        listOfMarketPlaces.forEach { market ->
+                            AsyncImage(
+                                model = market.linkForLogoMarkerPlace,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxSize(0.21f)
+                                    .clip(CircleShape)
+                                    .background(color = Color.White)
+                                    .clickable {
+                                        val encoded = Uri.encode(market.linkForMarkerPlace)
+                                        navController.navigate("${NavPath.OpenInWebViewScreen.name}/$encoded")
+                                    }
+                            )
+                        }
+                    }
+                }
             }
-        }
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            products.forEach { text ->
-                FilterButton(
-                    text = text,
-                    homeScreenViewModel,
-                    navController,
-                    onClick = {
-                        textForSearch = text
-                    })
-            }
-        }
-        if (recentProducts.isNotEmpty()) {
-            Text(
-                text = "Вы недавно смотрели:",
-                fontSize = 16.sp,
-                color = Color.White,
-                fontWeight = FontWeight.W500
-            )
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), reverseLayout = true) {
-                items(recentProducts) { item ->
-                    ProductItem(item)
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 50.dp)
+                        .border(1.dp, Color.White, RoundedCornerShape(8.dp))
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Search, contentDescription = null, tint = Color.White)
+                        Spacer(Modifier.width(8.dp))
+                        Text(text = textForSearch, fontSize = 16.sp, color = Color.White)
+                    }
+                    Row(
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.micro_icon),
+                            contentDescription = null,
+                            tint = Color(0xFFDA6600),
+                            modifier = Modifier.clickable { speechLauncher.launch(null) }
+                        )
+                        Spacer(
+                            Modifier
+                                .width(1.dp)
+                                .height(24.dp)
+                                .background(Color.White)
+                        )
+                        Icon(
+                            imageVector = ImageVector.vectorResource(id = R.drawable.camera_icon),
+                            contentDescription = null,
+                            tint = Color(0xFFDA6600),
+                            modifier = Modifier.clickable { openCameraSheet = true }
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Популярные запросы:", fontSize = 16.sp, color = Color.White)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { navController.navigate(NavPath.FilterScreen.name) }
+                    ) {
+                        Text("Фильтры", fontSize = 14.sp, color = Color.White)
+                        Spacer(Modifier.width(4.dp))
+                        Icon(
+                            painter = painterResource(R.drawable.filter_icon),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = Color.White
+                        )
+                    }
+                }
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    products.forEach { query ->
+                        FilterButton(
+                            text = query,
+                            homeScreenViewModel = homeScreenViewModel,
+                            navController = navController
+                        ) { textForSearch = query }
+                    }
+                }
+
+                if (recentProducts.isNotEmpty()) {
+                    Text("Вы недавно смотрели:", fontSize = 16.sp, color = Color.White)
+                    BoxWithConstraints(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        val columns = 3                       // сколько карточек хотим в ряду
+                        val spacing = 12.dp                    // Arrangement.spacedBy(...)
+
+                        val baseWidth =
+                            (maxWidth - spacing * (columns - 1)) / columns  // columns = 3
+                        val itemWidth = baseWidth * 1.15f
+                        LazyRow(
+                            horizontalArrangement = Arrangement.spacedBy(spacing),
+                        ) {
+                            items(recentProducts.reversed()) { product ->
+                                ProductItem(
+                                    item = product,
+                                    modifier = Modifier.width(itemWidth),
+                                    navController
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Text("Где мы ищем:", fontSize = 16.sp, color = Color.White)
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    listOfMarketPlaces.forEach { market ->
+                        AsyncImage(
+                            model = market.linkForLogoMarkerPlace,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize(0.21f)
+                                .clip(CircleShape)
+                                .background(color = Color.White)
+                                .clickable {
+                                    val encoded = Uri.encode(market.linkForMarkerPlace)
+                                    navController.navigate("${NavPath.OpenInWebViewScreen.name}/$encoded")
+                                }
+                        )
+                    }
                 }
             }
         }
-        Text(
-            text = "Где мы ищем:",
-            fontSize = 16.sp,
-            color = Color.White,
-            fontWeight = FontWeight.W500
-        )
-        FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            maxItemsInEachRow = 4,
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            listOfMarketPlaces.forEach {
-                AsyncImage(
-                    model = it.linkForLogoMarkerPlace,
-                    contentDescription = "",
-                    modifier = Modifier
-                        .size(72.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable {
-                            it.linkForMarkerPlace.let {
-                                val encodedLink = Uri.encode(it)
-                                navController.navigate("${NavPath.OpenInWebViewScreen.name}/$encodedLink")
-                            }
-                        }
-                )
-            }
-
-        }
     }
-
-    if (openFilterBottomSheet) {
+    if (openCameraSheet) {
         ModalBottomSheet(
-            tonalElevation = 20.dp,
-            contentColor = MaterialTheme.colorScheme.secondary,
-            containerColor = MaterialTheme.colorScheme.secondary,
-            sheetState = filterBottomState,
-            scrimColor = Color.White.copy(alpha = 0.2f),
-            onDismissRequest = { openFilterBottomSheet = false },
-        ) {
-            FilterBottomSheet(
-                homeScreenViewModel = homeScreenViewModel,
-                onDismissRequest = { openBottomSheet = false }
-            )
-        }
-    }
-
-    if (openBottomSheet) {
-        ModalBottomSheet(
-            tonalElevation = 20.dp,
-            contentColor = MaterialTheme.colorScheme.secondary,
-            containerColor = MaterialTheme.colorScheme.secondary,
-            sheetState = bottomState,
-            scrimColor = Color.White.copy(alpha = 0.2f),
-            onDismissRequest = { openBottomSheet = false },
+            sheetState = cameraSheetState,
+            onDismissRequest = { openCameraSheet = false }
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.secondary)
-                    .navigationBarsPadding()
-                    .padding(horizontal = 16.dp)
-                    .height(160.dp),
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 CustomButtonWithoutImageVector(
                     text = "Сделать фото",
                     onClick = {
-                        openBottomSheet = false
-                        val cropOptions = CropImageContractOptions(
-                            null,
-                            CropImageOptions(imageSourceIncludeGallery = false)
+                        openCameraSheet = false
+                        imageCropLauncher.launch(
+                            CropImageContractOptions(
+                                null,
+                                CropImageOptions(imageSourceIncludeGallery = false)
+                            )
                         )
-                        imageCropLauncher.launch(cropOptions)
                     }
                 )
                 CustomButtonWithoutImageVector(
-                    text = "Выбрать с Галереи",
+                    text = "Выбрать из галереи",
                     onClick = {
-                        openBottomSheet = false
-                        val cropOptions = CropImageContractOptions(
-                            null,
-                            CropImageOptions(imageSourceIncludeCamera = false)
+                        openCameraSheet = false
+                        imageCropLauncher.launch(
+                            CropImageContractOptions(
+                                null,
+                                CropImageOptions(imageSourceIncludeCamera = false)
+                            )
                         )
-                        imageCropLauncher.launch(cropOptions)
                     }
                 )
             }
@@ -374,43 +445,76 @@ fun HomeScreen(navController: NavHostController, homeScreenViewModel: HomeScreen
 }
 
 @Composable
-fun ProductItem(item: ProductEntity) {
+fun ProductItem(
+    item: ProductEntity,
+    modifier: Modifier = Modifier,
+    navController: NavHostController
+) {
     Card(
+        modifier = modifier
+            .height(210.dp)
+            .background(color = MaterialTheme.colorScheme.background)
+            .clickable {
+                item.linkForMarket.let {
+                    val encodedLink = Uri.encode(item.linkForMarket)
+                    navController.navigate("${NavPath.OpenInWebViewScreen.name}/$encodedLink")
+                }
+            },
         shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(width = 1.dp, color = Color.White)
+        border = BorderStroke(1.dp, Color.Gray)
     ) {
         Column(
-            modifier = Modifier
-                .background(color = MaterialTheme.colorScheme.background),
+            Modifier
+                .fillMaxSize()
+                .background(color = MaterialTheme.colorScheme.background)
         ) {
             AsyncImage(
                 model = item.imageLink,
-                contentDescription = "phone",
-                modifier = Modifier.width(100.dp)
+                contentDescription = item.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)                    // фикс‑высота
+                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp))
             )
             Column(
-                modifier = Modifier
+                Modifier
+                    .fillMaxSize()
                     .padding(8.dp)
-                    .width(100.dp)
+                    .background(color = MaterialTheme.colorScheme.background),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
                     text = item.title,
                     color = Color.White,
                     fontSize = 14.sp,
-                    minLines = 1,
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    fontWeight = FontWeight.W400
+                    overflow = TextOverflow.Ellipsis
                 )
-                Text(
-                    text = item.price,
-                    fontWeight = FontWeight.W500,
-                    fontSize = 12.sp,
-                    color = Color(0xFFDA6600)
-                )
+                item.price?.let {
+                    val displayPrice = it.substringBefore(',')
+                    Text(
+                        text = "$displayPrice ₸",
+                        fontWeight = FontWeight.W500,
+                        fontSize = 14.sp,
+                        color = Color(0xFFDA6600)
+                    )
+                }
             }
         }
     }
+}
+
+fun String.formatAsPrice(): String {
+    val value = this.replace(" ", "")         // убираем возможные пробелы
+    val number = value.toDoubleOrNull() ?: return this
+
+    val symbols = DecimalFormatSymbols(Locale("ru")).apply {
+        groupingSeparator = ' '               // пробел‑разделитель тысяч
+        decimalSeparator = ','                // не важен, обнуляем дробь
+    }
+    val fmt = DecimalFormat("#,###", symbols) // без десятичных знаков
+    return fmt.format(number)                 // "32 000"
 }
 
 

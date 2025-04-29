@@ -13,12 +13,15 @@ import com.example.productfinder.data.Product
 import com.example.productfinder.data.SearchByTextRequest
 import com.example.productfinder.data.db.dao.ProductDao
 import com.example.productfinder.data.db.entity.ProductEntity
+import com.example.productfinder.presentation.filterscreen.FilterCategory
+import com.example.productfinder.presentation.filterscreen.FilterItem
 import com.example.productfinder.presentation.itemfoundscreen.ProductsUiState
 import com.google.gson.Gson
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -43,6 +46,9 @@ class HomeScreenViewModel @Inject constructor(
     private val _recentProducts = MutableStateFlow<List<ProductEntity>>(emptyList())
     val recentProducts = _recentProducts
 
+    private val _categories = MutableStateFlow(sampleData())
+    val categories: StateFlow<List<FilterCategory>> = _categories
+
     val filters = MutableStateFlow<Filters>(Filters(emptyList()))
 
     fun getRecentProducts(){
@@ -51,22 +57,96 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
-    fun saveRecentProductInDB(product: Product){
-        viewModelScope.launch {
-            productDao.insert(
-                ProductEntity(
-                    title = product.title.toString(),
-                    source = product.source.toString(),
-                    price = product.price.toString(),
-                    imageLink = product.imageLink.toString(),
-                    rating = product.rating,
-                    linkForMarket = product.link.toString(),
-                    freeDelivery = product.freeDelivery,
-                    logoUrl = product.logoUrl.toString()
+    fun toggleAllCategories(enabled: Boolean) {
+        _categories.update { list ->
+            list.map { cat ->
+                cat.copy(
+                    enabled = enabled,
+                    items = cat.items.map { it.copy(enabled = enabled) }
                 )
-            )
+            }
         }
     }
+
+    fun toggleCategory(catId: String, enabled: Boolean) {
+        _categories.update { list ->
+            list.map {
+                if (it.id == catId) {
+                    it.copy(
+                        enabled = enabled,
+                        items = it.items.map { item -> item.copy(enabled = enabled) }
+                    )
+                } else it
+            }
+        }
+    }
+
+    fun toggleItem(catId: String, itemId: String, enabled: Boolean) {
+        _categories.update { list ->
+            list.map { cat ->
+                if (cat.id == catId) {
+                    val newItems = cat.items.map { item ->
+                        if (item.id == itemId) item.copy(enabled = enabled) else item
+                    }
+                    cat.copy(
+                        enabled = newItems.all { it.enabled },
+                        items = newItems
+                    )
+                } else cat
+            }
+        }
+    }
+
+    private fun sampleData() = listOf(
+        FilterCategory(
+            id = "marketplaces",
+            title = "Маркетплейсы",
+            items = listOf(
+                FilterItem("kaspi", "Kaspi",  "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://kaspi.kz&size=256"),
+                FilterItem("wildberries", "Wildberries", "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://wildberries.kz&size=256"),
+                FilterItem("ozon", "Ozon", "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://ozon.kz&size=256"),
+                FilterItem("flip", "Flip", "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://flip.kz&size=256"),
+            )
+        ),
+        FilterCategory(
+            id = "shops",
+            title = "Магазины электроники",
+            items = listOf(
+                FilterItem("Технодом", "Technodom", "https://logo.clearbit.com/technodom.kz"),
+                FilterItem("Sulpak", "Sulpak", "https://logo.clearbit.com/sulpak.kz"),
+                FilterItem("Мечта", "Mechta", "https://logo.clearbit.com/mechta.kz"),
+                FilterItem("Alser", "Alser", "https://logo.clearbit.com/alser.kz"),
+                FilterItem("Evrika", "Evrika", "https://logo.clearbit.com/evrika.com"),
+                FilterItem("Белый Ветер", "Белый ветер", "https://logo.clearbit.com/shop.kz"),
+                FilterItem("Logitech", "Logitech", "https://logo.clearbit.com/logitech.com"),
+                FilterItem("DNS", "DNS", "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://dns-shop.kz&size=256"),
+            )
+        ),
+        FilterCategory(
+            id = "clothes and shoes",
+            title = "Одежда и обувь",
+            items = listOf(
+                FilterItem("LC Waikiki", "LC Waikiki", "https://logo.clearbit.com/lcwaikiki.kz"),
+                FilterItem("Zara", "Zara", "https://logo.clearbit.com/zara.com"),
+                FilterItem("Intertop", "Intertop", "https://logo.clearbit.com/intertop.kz"),
+                FilterItem("Lamoda.kz", "Lamoda", "https://logo.clearbit.com/lamoda.kz"),
+                FilterItem("Adidas", "Adidas", "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://adidas.kz&size=256"),
+                FilterItem("Sportmaster", "Sportmaster", "https://logo.clearbit.com/sportmaster.com"),
+                FilterItem("Looq Sports", "Looq Sports", "https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://looqsports01.kz&size=256"),
+            )
+        ),
+        FilterCategory(
+            id = "beauty",
+            title = "Косметика",
+            items = listOf(
+                FilterItem("Care to Beauty", "Care to Beauty", "https://logo.clearbit.com/caretobeauty.com"),
+                FilterItem("Loja Glamourosa", "Loja Glamourosa ", "https://logo.clearbit.com/lojaglamourosa.com"),
+                FilterItem("LaBeauty", "LaBeauty", "https://logo.clearbit.com/labeauty.com"),
+                FilterItem("Mon Amie", "Mon Amie", "https://logo.clearbit.com/monamie.kz"),
+                FilterItem("Oriflame", "Oriflame", "https://logo.clearbit.com/oriflame.com")
+            )
+        ),
+    )
 
     fun toggleMarketplace(marketplace: String, isChecked: Boolean) {
         val currentList = filters.value.marketplaces.toMutableList()
@@ -173,5 +253,22 @@ class HomeScreenViewModel @Inject constructor(
             }
         }
         return file
+    }
+
+    fun saveRecentProductInDB(product: Product){
+        viewModelScope.launch {
+            productDao.insert(
+                ProductEntity(
+                    title = product.title.toString(),
+                    source = product.source.toString(),
+                    price = product.price.toString(),
+                    imageLink = product.imageLink.toString(),
+                    rating = product.rating,
+                    linkForMarket = product.link.toString(),
+                    freeDelivery = product.freeDelivery,
+                    logoUrl = product.logoUrl.toString()
+                )
+            )
+        }
     }
 }

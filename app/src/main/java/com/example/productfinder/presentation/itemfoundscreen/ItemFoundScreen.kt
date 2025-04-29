@@ -1,9 +1,13 @@
+@file:Suppress("MISSING_DEPENDENCY_CLASS_IN_EXPRESSION_TYPE")
+
 package com.example.productfinder.presentation.itemfoundscreen
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.core.EaseInOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,6 +42,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -56,6 +61,13 @@ import com.example.productfinder.movingletters.FadeAnimatedText
 import com.example.productfinder.movingletters.rememberAnimatedTextState
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
+import coil.compose.AsyncImage
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
+import com.airbnb.lottie.compose.*
 
 
 @SuppressLint("CoroutineCreationDuringComposition")
@@ -76,13 +88,24 @@ fun ItemFoundScreen(
     ) {
         when (productsUiState) {
             is ProductsUiState.Loading -> {
-                LoadingAnimation(
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()          // ширина
-                        .wrapContentHeight()     // высота по содержимому
-                )
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    LottieLoading()
+                }
             }
+
             is ProductsUiState.Empty -> {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("ПУСТО")
+                }
             }
 
             is ProductsUiState.Error -> {
@@ -101,7 +124,7 @@ fun ItemFoundScreen(
                     val errorMessage = (productsUiState as ProductsUiState.Error).message
 
                     Text(
-                        text = errorMessage,
+                        text = "Повторите попытку позже",
                         color = Color.White,
                     )
                 }
@@ -117,12 +140,34 @@ fun ItemFoundScreen(
                     state = listState
                 ) {
                     items(products) { product ->
-                        ProductItem(product = product,homeScreenViewModel, navController = navController)
+                        ProductItem(
+                            product = product,
+                            homeScreenViewModel,
+                            navController = navController
+                        )
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+fun LottieLoading(
+    modifier: Modifier = Modifier,
+    rawResId: Int = R.raw.lottie_loading
+) {
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(rawResId))
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever
+    )
+
+    LottieAnimation(
+        composition = composition,
+        progress = { progress },
+        modifier = modifier.size(450.dp)
+    )
 }
 
 @Composable
@@ -144,7 +189,6 @@ fun LoadingAnimation(
         index = (index + 1) % messages.size
     }
 
-    // Центрируем надпись по ширине
     Box(
         modifier = modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center
@@ -154,12 +198,13 @@ fun LoadingAnimation(
                 text = message,
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontSize = 22.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White
                 ),
                 animationDuration = 2_000.milliseconds,
-                intermediateDuration = 90.milliseconds,
+                intermediateDuration = 140.milliseconds,
                 easing = EaseInOut,
-                animateOnMount = true    // анимация запускается сама
+                animateOnMount = true
             )
         }
     }
@@ -173,6 +218,7 @@ fun ProductItem(
     modifier: Modifier = Modifier,
     navController: NavHostController
 ) {
+    val context = LocalContext.current
     val logoTitleFont = FontFamily(Font(R.font.montserrat_black))
     val titleFont = FontFamily(Font(R.font.montserrat_medium))
     Card(
@@ -191,24 +237,49 @@ fun ProductItem(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(
-                modifier = Modifier.padding(start = 8.dp, top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                AsyncImage(
-                    model = product.logoUrl,
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AsyncImage(
+                        model = product.logoUrl,
+                        contentDescription = "",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(8.dp)),
+                    )
+                    Text(
+                        text = product.source.toString(),
+                        fontSize = 16.sp,
+                        fontFamily = logoTitleFont,
+                        fontWeight = FontWeight.W400,
+                        color = Color.White
+                    )
+                }
+                Image(
+                    painter = painterResource(R.drawable.share_android),
                     contentDescription = "",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                )
-                Text(
-                    text = product.source.toString(),
-                    fontSize = 16.sp,
-                    fontFamily = logoTitleFont,
-                    fontWeight = FontWeight.W400,
-                    color = Color.White
+                    modifier = Modifier.clickable {
+                        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_SUBJECT, "Посмотри этот товар!")
+                            putExtra(
+                                Intent.EXTRA_TEXT,
+                                product.link ?: ""
+                            )
+                        }
+                        context.startActivity(
+                            Intent.createChooser(shareIntent, "Поделиться через")
+                        )
+                    }
                 )
             }
             Row(modifier = Modifier.fillMaxWidth()) {
@@ -218,7 +289,7 @@ fun ProductItem(
                     contentDescription = "product",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .size(100.dp)
+                        .size(120.dp)
                         .padding(8.dp)
                         .clip(RoundedCornerShape(8.dp)),
                 )
@@ -237,25 +308,31 @@ fun ProductItem(
                     )
                     RatingBar(
                         modifier = Modifier
-                            .size(25.dp),
+                            .size(16.dp),
                         rating = product.rating,
                         onRatingChanged = {
                         },
-                        starsColor = Color.Yellow
+                        starsColor = Color(0xffDA6600)
                     )
-                    Text(
-                        text = product.price ?: "Цена не указана",
-                        color = Color.Red,
-                        fontSize = 14.sp,
-                        fontFamily = logoTitleFont,
-                        fontWeight = FontWeight.W500
-                    )
-                    Text(
-                        text = if (product.freeDelivery) "Бесплатная доставка" else "Платная доставка",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.W400,
-                        color = if (product.freeDelivery) Color.Green else Color.Red
-                    )
+                    product.price?.let {
+                        val displayPrice = it.substringBefore(',')
+                        Text(
+                            text = "$displayPrice ₸",
+                            color = Color.Red,
+                            fontSize = 14.sp,
+                            fontFamily = logoTitleFont,
+                            fontWeight = FontWeight.W500
+                        )
+                    }
+                    if (product.freeDelivery) {
+                        Text(
+                            text = "Бесплатная доставка",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.W400,
+                            fontFamily = titleFont,
+                            color = Color.Green
+                        )
+                    }
                 }
             }
         }

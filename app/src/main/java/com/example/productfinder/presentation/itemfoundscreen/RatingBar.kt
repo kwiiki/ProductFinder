@@ -17,7 +17,7 @@ fun RatingBar(
     rating: Double = 0.0,
     stars: Int = 5,
     onRatingChanged: (Double) -> Unit,
-    starsColor: Color = Color.Yellow
+    starsColor: Color = Color(0xFFDA6600)
 ) {
 
     var isHalfStar = (rating % 1) != 0.0

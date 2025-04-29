@@ -16,7 +16,7 @@ data class ProductEntity(
     @SerializedName("image_link")
     val imageLink: String,
     @SerializedName("price")
-    val price: String,
+    val price: String?,
     @SerializedName("logo_url")
     val logoUrl: String,
     @SerializedName("rating")

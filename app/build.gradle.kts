@@ -95,6 +95,8 @@ dependencies {
 
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
 
+    implementation("com.airbnb.android:lottie-compose:6.4.0")
+
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     annotationProcessor(libs.room.compiler)
