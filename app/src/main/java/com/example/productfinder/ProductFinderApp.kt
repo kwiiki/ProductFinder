@@ -35,7 +35,7 @@ fun ProductFinderApp() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = NavPath.HomeScreen.name,
+            startDestination = NavPath.FilterScreen.name,
             modifier = Modifier.padding(innerPadding),
         ) {
             composable(Screen.HomeScreen.route) {
